@@ -207,6 +207,38 @@ var UniqTests = []struct {
 			"Thanks.",
 		},
 	},
+	{ 	"Флаг -s num",
+		Options{
+			C: false,
+			D: false,
+			U: false,
+			I: false,
+			F: F{
+				Exists: false,
+				NumFields: 0,
+			},
+			S: S{
+				Exists: true,
+				NumChars: 1,
+			},
+		},
+		[]string{
+			"I love music.",
+			"A love music.",
+			"C love music.",
+			"\n",
+			"I love music of Kartik.",
+			"We love music of Kartik.",
+			"Thanks.",
+		},
+		[]string{
+			"I love music.",
+			"\n",
+			"I love music of Kartik.",
+			"We love music of Kartik.",
+			"Thanks.",
+		},
+	},
 }
 
 func TestUniq(t *testing.T) {

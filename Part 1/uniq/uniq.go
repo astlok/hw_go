@@ -3,7 +3,6 @@ package uniq
 import (
 	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 type F struct {
@@ -26,7 +25,8 @@ type Options struct {
 }
 
 type LineOccursCount struct {
-	Line  string
+	CompLine  string //для сравнения
+	ActualLine string //для вывода результата
 	Count int
 }
 
@@ -34,7 +34,7 @@ type LineOccursCount struct {
 func ContainsLastNum(slice []LineOccursCount, line string, sensCase bool) int {
 	lastNum := -1
 	for i, elem := range slice {
-		if line == elem.Line || (sensCase && strings.ToLower(line) == strings.ToLower(elem.Line)) {
+		if line == elem.CompLine || (sensCase && strings.ToLower(line) == strings.ToLower(elem.CompLine)) {
 			lastNum = i
 		}
 	}
@@ -42,49 +42,20 @@ func ContainsLastNum(slice []LineOccursCount, line string, sensCase bool) int {
 }
 
 func Uniq(lines []string, options Options) []string {
-
-	if options.F.Exists {
-		for _, line := range lines {
-			fieldsInLine := len(strings.Split(line, " "))
-			if fieldsInLine < options.F.NumFields {
-				lines = lines[1:]
-				options.F.NumFields -= fieldsInLine
-			} else if fieldsInLine == options.F.NumFields {
-				lines = lines[1:]
-				break
-			} else if fieldsInLine > options.F.NumFields {
-				lineArray := strings.Split(line, " ")
-				lineArray = lineArray[options.F.NumFields:]
-				lines[0] = strings.Join(lineArray, " ")
-				break
-			}
-		}
-	}
-	//вырезаем numChars символов из массива строк
-	if options.S.Exists {
-		for _, line := range lines {
-			charsInLine := utf8.RuneCountInString(line)
-			if charsInLine < options.S.NumChars {
-				lines = lines[1:]
-				options.S.NumChars -= charsInLine
-			} else if charsInLine == options.S.NumChars {
-				lines = lines[1:]
-				break
-			} else if charsInLine > options.S.NumChars {
-				lines[0] = line[options.S.NumChars:]
-				break
-			}
-		}
-	}
-
 	//переписываем все уникальные строки в массив, подсчитывая сколько раз они встречались
 	lineOccursCount := []LineOccursCount{}
-	for i := 0; i < len(lines); i++ {
-		if num := ContainsLastNum(lineOccursCount, lines[i], options.I); num != -1 && num == len(lineOccursCount)-1 {
+	for i, line := range lines {
+		if options.F.Exists {
+			lineArray := strings.Split(line, " ")
+			lineArray = lineArray[options.F.NumFields:]
+			line = strings.Join(lineArray, " ")
+		}
+		if num := ContainsLastNum(lineOccursCount, line[options.S.NumChars:], options.I); num != -1 && num == len(lineOccursCount)-1 {
 			lineOccursCount[num].Count++
 		} else {
 			lineOccursCount = append(lineOccursCount, LineOccursCount{
-				Line:  lines[i],
+				CompLine: line[options.S.NumChars:],
+				ActualLine:  lines[i],
 				Count: 1,
 			})
 		}
@@ -95,15 +66,15 @@ func Uniq(lines []string, options Options) []string {
 	for _, lineOccurs := range lineOccursCount {
 		if options.C {
 			//подсчитывает количество встречаний строки во входных данных.
-			result = append(result, strconv.Itoa(lineOccurs.Count)+" "+lineOccurs.Line)
+			result = append(result, strconv.Itoa(lineOccurs.Count)+" "+lineOccurs.ActualLine)
 		} else if options.D && lineOccurs.Count > 1 {
 			//строки, которые повторились во входных данных
-			result = append(result, lineOccurs.Line)
+			result = append(result, lineOccurs.ActualLine)
 		} else if options.U && lineOccurs.Count == 1 {
 			//строки, которые не повторились во входных данных.
-			result = append(result, lineOccurs.Line)
+			result = append(result, lineOccurs.ActualLine)
 		} else if !options.C && !options.D && !options.U {
-			result = append(result, lineOccurs.Line)
+			result = append(result, lineOccurs.ActualLine)
 		}
 	}
 	return result
