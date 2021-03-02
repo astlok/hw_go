@@ -1,17 +1,18 @@
 package uniq
 
 import (
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
 
 type F struct {
-	Exists bool
+	Exists    bool
 	NumFields int
 }
 
 type S struct {
-	Exists bool
+	Exists   bool
 	NumChars int
 }
 
@@ -24,18 +25,28 @@ type Options struct {
 	S S
 }
 
-func Uniq(lines []string, options Options) []string {
-	// перевод всех строк в нижний регистр
-	if options.I {
-		for _, line := range lines {
-			line = strings.ToLower(line)
+type LineOccursCount struct {
+	Line  string
+	Count int
+}
+
+//проверяет входит ли элемент в массив и возвращает его последнее вхождение или -1
+func ContainsLastNum(slice []LineOccursCount, line string, sensCase bool) int {
+	lastNum := -1
+	for i, elem := range slice {
+		if line == elem.Line || (sensCase && strings.ToLower(line) == strings.ToLower(elem.Line)) {
+			lastNum = i
 		}
 	}
-	// вырезаем numFields полей из массива строк
+	return lastNum
+}
+
+func Uniq(lines []string, options Options) []string {
+
 	if options.F.Exists {
 		for _, line := range lines {
 			fieldsInLine := len(strings.Split(line, " "))
-			if  fieldsInLine < options.F.NumFields {
+			if fieldsInLine < options.F.NumFields {
 				lines = lines[1:]
 				options.F.NumFields -= fieldsInLine
 			} else if fieldsInLine == options.F.NumFields {
@@ -53,7 +64,7 @@ func Uniq(lines []string, options Options) []string {
 	if options.S.Exists {
 		for _, line := range lines {
 			charsInLine := utf8.RuneCountInString(line)
-			if  charsInLine < options.S.NumChars {
+			if charsInLine < options.S.NumChars {
 				lines = lines[1:]
 				options.S.NumChars -= charsInLine
 			} else if charsInLine == options.S.NumChars {
@@ -65,15 +76,35 @@ func Uniq(lines []string, options Options) []string {
 			}
 		}
 	}
-	if options.C {
-		//TODO: подсчитать количество встречаний строки во входных данных.
-		// Вывести это число перед строкой отделив пробелом.
-	} else if options.D {
-		//TODO: вывести только те строки, которые повторились во входных данных.
-	} else if options.U {
-		//TODO: вывести только те строки, которые не повторились во входных данных.
-	} else {
-		//TODO: вывод уникальных строк из входных данных.
+
+	//переписываем все уникальные строки в массив, подсчитывая сколько раз они встречались
+	lineOccursCount := []LineOccursCount{}
+	for i := 0; i < len(lines); i++ {
+		if num := ContainsLastNum(lineOccursCount, lines[i], options.I); num != -1 && num == len(lineOccursCount)-1 {
+			lineOccursCount[num].Count++
+		} else {
+			lineOccursCount = append(lineOccursCount, LineOccursCount{
+				Line:  lines[i],
+				Count: 1,
+			})
+		}
 	}
-	return lines //[]string{"TODO return"}
+
+	//формируем рузультирующий массив
+	result := []string{}
+	for _, lineOccurs := range lineOccursCount {
+		if options.C {
+			//подсчитывает количество встречаний строки во входных данных.
+			result = append(result, strconv.Itoa(lineOccurs.Count)+" "+lineOccurs.Line)
+		} else if options.D && lineOccurs.Count > 1 {
+			//строки, которые повторились во входных данных
+			result = append(result, lineOccurs.Line)
+		} else if options.U && lineOccurs.Count == 1 {
+			//строки, которые не повторились во входных данных.
+			result = append(result, lineOccurs.Line)
+		} else if !options.C && !options.D && !options.U {
+			result = append(result, lineOccurs.Line)
+		}
+	}
+	return result
 }
