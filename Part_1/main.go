@@ -31,9 +31,8 @@ func ReadFromStream(args []string) ([]string, error) {
 		readFile, err := os.Open(flag.Args()[0])
 		if err != nil {
 			return []string{}, err
-		} else {
-			defer readFile.Close()
 		}
+		defer readFile.Close()
 		r = readFile
 	}
 	return ReadLines(r), nil
