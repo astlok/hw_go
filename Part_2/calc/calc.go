@@ -68,52 +68,71 @@ func getNextEssence(expr string) (string, int) {
 	return result, len(expr)
 }
 
-func Calc(expr string) float64 {
+func signHandler(stackSigns *stack, stackDigits *stack, next string, result *float64) error {
+	calculate := func(next string) error {
+		var val1String string
+		var val2String string
+
+		*stackDigits, val1String = stackDigits.Pop()
+		*stackDigits, val2String = stackDigits.Pop()
+
+		val1Int, err1 := strconv.ParseFloat(val1String, 64)
+		val2Int, err2 := strconv.ParseFloat(val2String, 64)
+
+		if err1 != nil {
+			return err1
+		}
+		if err2 != nil {
+			return err2
+		}
+
+		var sign string
+		*stackSigns, sign = stackSigns.Pop()
+
+		*result = getRes(val1Int, val2Int, sign)
+		*stackDigits = stackDigits.Push(fmt.Sprintf("%f", *result))
+
+		if next != "" && next != ")" {
+			*stackSigns = stackSigns.Push(next)
+		}
+		return nil
+	}
+	if OperatorPriority[stackSigns.Top()] < OperatorPriority[next] || (stackSigns.Top() == "(" && next != ")") {
+		*stackSigns = stackSigns.Push(next)
+	} else if next == "(" {
+		*stackSigns = stackSigns.Push(next)
+	} else  if next != ")" && next != "(" {
+		if err := calculate(next); err != nil {
+			return err
+		}
+	} else {
+		for stackSigns.Top() != "(" {
+			if err := calculate(next); err != nil {
+				return err
+			}
+		}
+		*stackSigns, _ = stackSigns.Pop()
+	}
+	return nil
+}
+
+func Calc(expr string) (float64, error) {
 	var result float64
 
 	var stackDigits stack
 	var stackSigns stack
 
-	calculate := func(next string) {
-		var val1String string
-		var val2String string
-
-		stackDigits, val1String = stackDigits.Pop()
-		stackDigits, val2String = stackDigits.Pop()
-
-		val1Int, _ := strconv.ParseFloat(val1String, 64)
-		val2Int, _ := strconv.ParseFloat(val2String, 64)
-
-		var sign string
-		stackSigns, sign = stackSigns.Pop()
-
-		result = getRes(val1Int, val2Int, sign)
-		stackDigits = stackDigits.Push(fmt.Sprintf("%f", result))
-
-		if next != "" && next != ")" {
-			stackSigns = stackSigns.Push(next)
-		}
-	}
 
 	for len(expr) != 0 || len(stackSigns) > 0 {
 		next, length := getNextEssence(expr)
 		if _, err := strconv.ParseFloat(next, 64); err == nil {
 			stackDigits = stackDigits.Push(next)
 		} else {
-			if OperatorPriority[stackSigns.Top()] < OperatorPriority[next] || (stackSigns.Top() == "(" && next != ")") {
-				stackSigns = stackSigns.Push(next)
-			} else if next == "(" {
-				stackSigns = stackSigns.Push(next)
-			} else  if next != ")" && next != "(" {
-				calculate(next)
-			} else {
-				for stackSigns.Top() != "(" {
-					calculate(next)
-				}
-				stackSigns, _ = stackSigns.Pop()
+			if err := signHandler(&stackSigns, &stackDigits, next, &result); err != nil {
+				return 0, err
 			}
 		}
 		expr = expr[length:]
 	}
-	return result
+	return result, nil
 }

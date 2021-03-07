@@ -51,7 +51,7 @@ var CalcTests = []struct {
 func TestCalc(t *testing.T) {
 	for _, tt := range CalcTests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := Calc(tt.in)
+			result, _ := Calc(tt.in)
 			require.Equal(t, tt.out, result)
 		})
 	}

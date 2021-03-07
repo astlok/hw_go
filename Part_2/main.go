@@ -5,11 +5,19 @@ import (
 	"fmt"
 	"main/calc"
 	"strings"
+	"syscall"
 )
 
 func main() {
 	flag.Parse()
 	expr := strings.Join(flag.Args(), "")
 
-	fmt.Println(calc.Calc(expr))
+	result, err := calc.Calc(expr);
+
+	if err != nil {
+		fmt.Println(nil)
+		syscall.Kill(syscall.Getpid(), syscall.SIGHUP)
+	}
+
+	fmt.Println(result)
 }

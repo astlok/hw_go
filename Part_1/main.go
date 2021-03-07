@@ -1,26 +1,42 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"main/uniq"
 	"os"
 	"strings"
+	"syscall"
 )
 
 func ReadLines(r io.Reader) []string {
-	var line string
-	data := make([]byte, 64)
-	for {
-		n, err := r.Read(data)
-		if err == io.EOF {
-			break
-		}
-		line += string(data[:n])
+	var lines string
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		lines += scanner.Text() + "\n"
 	}
-	return strings.Split(line, "\n")
+	return strings.Split(lines, "\n")
+}
+
+func ReadFromStream(args []string) ([]string, error) {
+	var r io.Reader
+	switch len(args) {
+	case 0:
+		r = os.Stdin
+	case 1, 2:
+		readFile, err := os.Open(flag.Args()[0])
+		if err != nil {
+			return []string{}, err
+		} else {
+			defer readFile.Close()
+		}
+		r = readFile
+	}
+	return ReadLines(r), nil
 }
 
 func WriteLines(w io.Writer, lines []string) error {
@@ -30,77 +46,72 @@ func WriteLines(w io.Writer, lines []string) error {
 		}
 
 		buf := bytes.NewBufferString(line)
-		_, err := w.Write(buf.Bytes())
 
-		if err != nil {
+		if _, err := w.Write(buf.Bytes()); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func main() {
-	c := flag.Bool("c", false, "подсчитать количество встречаний строки во входных данных. Вывести это число перед строкой отделив пробелом.")
-	d := flag.Bool("d", false, "вывести только те строки, которые повторились во входных данных.")
-	u := flag.Bool("u", false, "вывести только те строки, которые не повторились во входных данных.")
-	i := flag.Bool("i", false, "вывести только те строки, которые не повторились во входных данных.")
-
-	f := flag.Int("f", 0, "вывести только те строки, которые не повторились во входных данных.")
-	s := flag.Int("s", 0, "вывести только те строки, которые не повторились во входных данных.")
-	flag.Parse()
-
-	if (*c && *d) || (*d && *u) || (*c && *u) {
-		fmt.Println("Incorrect arguments!\nuniq [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]")
-		return
-	}
-
-	options := uniq.Options{
-		C: *c,
-		D: *d,
-		U: *u,
-		I: *i,
-		F: uniq.F{
-			Exists:    *f > 0,
-			NumFields: *f,
-		},
-		S: uniq.S{
-			Exists:   *s > 0,
-			NumChars: *s,
-		},
-	}
-
-	var r io.Reader
+func WriteToStream(args []string, toWrite []string) error {
 	var w io.Writer
-
-	switch len(flag.Args()) {
-	case 0:
-		r = os.Stdin
-		w = os.Stdout
-	case 1:
-		readFile, err := os.Open(flag.Args()[0])
-		if err != nil {
-			fmt.Println("Incorrect arguments!\nuniq [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]")
-		}
-		r = readFile
+	switch len(args) {
+	case 0,1:
 		w = os.Stdout
 	case 2:
-		readFile, errRead := os.Open(flag.Args()[0])
-		writeFile, errWrite := os.OpenFile(flag.Args()[1], os.O_WRONLY, 0666)
-		if errRead != nil || errWrite != nil {
-			fmt.Println("Incorrect arguments!\nuniq [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]")
+		writeFile, errWrite := os.OpenFile(args[1], os.O_WRONLY, 0666)
+
+		if errWrite != nil {
+			return errWrite
+		} else {
+			defer writeFile.Close()
 		}
-		r = readFile
 		w = writeFile
 	}
+	err := WriteLines(w, toWrite)
+	return err
+}
 
-	lines := ReadLines(r)
+func ArgHandle() (uniq.Options, error) {
+	options := uniq.Options{}
+	options.C = *flag.Bool("c", false, "подсчитать количество встречаний строки во входных данных. Вывести это число перед строкой отделив пробелом.")
+	options.D = *flag.Bool("d", false, "вывести только те строки, которые повторились во входных данных.")
+	options.U = *flag.Bool("u", false, "вывести только те строки, которые не повторились во входных данных.")
+	options.I = *flag.Bool("i", false, "вывести только те строки, которые не повторились во входных данных.")
+
+	options.F.NumFields = *flag.Int("f", 0, "вывести только те строки, которые не повторились во входных данных.")
+	options.F.Exists = options.F.NumFields > 0
+	options.S.NumChars = *flag.Int("s", 0, "вывести только те строки, которые не повторились во входных данных.")
+	options.S.Exists = options.S.NumChars  > 0
+	flag.Parse()
+
+	if (options.C && options.D) || (options.D && options.U) || (options.C && options.U) {
+		return uniq.Options{}, errors.New("Incorrect arguments!\nuniq [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]")
+	}
+	return options, nil
+}
+
+func main() {
+	//чтение аргументов
+	options, err := ArgHandle()
+	if err != nil {
+		fmt.Println(err.Error())
+		syscall.Kill(syscall.Getpid(), syscall.SIGHUP)
+	}
+
+	//чтение данных
+	lines, err := ReadFromStream(flag.Args())
+	if err != nil {
+		fmt.Println(err.Error())
+		syscall.Kill(syscall.Getpid(), syscall.SIGHUP)
+	}
 
 	result := uniq.Uniq(lines, options)
 
-	err := WriteLines(w, result)
-
-	if err != nil {
-		fmt.Println("Can't write to file")
-		return
+	//запись результата
+	if err = WriteToStream(flag.Args(), result); err != nil {
+		fmt.Println(err.Error())
+		syscall.Kill(syscall.Getpid(), syscall.SIGHUP)
 	}
 }

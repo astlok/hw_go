@@ -62,18 +62,19 @@ func Uniq(lines []string, options Options) []string {
 	}
 
 	//формируем рузультирующий массив
-	result := []string{}
+	result := make([]string, len(lineOccursCount))
 	for _, lineOccurs := range lineOccursCount {
-		if options.C {
+		switch {
+		case options.C:
 			//подсчитывает количество встречаний строки во входных данных.
 			result = append(result, strconv.Itoa(lineOccurs.Count)+" "+lineOccurs.ActualLine)
-		} else if options.D && lineOccurs.Count > 1 {
+		case options.D && lineOccurs.Count > 1:
 			//строки, которые повторились во входных данных
 			result = append(result, lineOccurs.ActualLine)
-		} else if options.U && lineOccurs.Count == 1 {
+		case options.U && lineOccurs.Count == 1:
 			//строки, которые не повторились во входных данных.
 			result = append(result, lineOccurs.ActualLine)
-		} else if !options.C && !options.D && !options.U {
+		case !options.C && !options.D && !options.U:
 			result = append(result, lineOccurs.ActualLine)
 		}
 	}
