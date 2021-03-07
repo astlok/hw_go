@@ -17,14 +17,14 @@ func (s stack) Pop() (stack, string) {
 	}
 
 	l := len(s)
-	return  s[:l-1], s[l-1]
+	return s[:l-1], s[l-1]
 }
 
 func (s stack) Top() string {
 	if len(s) == 0 {
 		return ""
 	}
-	return s[len(s) - 1]
+	return s[len(s)-1]
 }
 
 var OperatorPriority = map[string]int{
@@ -61,7 +61,7 @@ func getNextEssence(expr string) (string, int) {
 			return string(ch), i + 1
 		} else if OperatorPriority[string(ch)] > 0 {
 			return result, i
-		} else if _, err := strconv.Atoi(string(ch)); err == nil || ch == '.'{
+		} else if _, err := strconv.Atoi(string(ch)); err == nil || ch == '.' {
 			result += string(ch)
 		}
 	}
@@ -101,7 +101,7 @@ func signHandler(stackSigns *stack, stackDigits *stack, next string, result *flo
 		*stackSigns = stackSigns.Push(next)
 	} else if next == "(" {
 		*stackSigns = stackSigns.Push(next)
-	} else  if next != ")" && next != "(" {
+	} else if next != ")" && next != "(" {
 		if err := calculate(next); err != nil {
 			return err
 		}
@@ -121,7 +121,6 @@ func Calc(expr string) (float64, error) {
 
 	var stackDigits stack
 	var stackSigns stack
-
 
 	for len(expr) != 0 || len(stackSigns) > 0 {
 		next, length := getNextEssence(expr)

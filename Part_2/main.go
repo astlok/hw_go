@@ -12,7 +12,7 @@ func main() {
 	flag.Parse()
 	expr := strings.Join(flag.Args(), "")
 
-	result, err := calc.Calc(expr);
+	result, err := calc.Calc(expr)
 
 	if err != nil {
 		fmt.Println(nil)

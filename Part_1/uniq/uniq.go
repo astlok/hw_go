@@ -25,9 +25,9 @@ type Options struct {
 }
 
 type LineOccursCount struct {
-	CompLine  string //для сравнения
+	CompLine   string //для сравнения
 	ActualLine string //для вывода результата
-	Count int
+	Count      int
 }
 
 //проверяет входит ли элемент в массив и возвращает его последнее вхождение или -1
@@ -54,9 +54,9 @@ func Uniq(lines []string, options Options) []string {
 			lineOccursCount[num].Count++
 		} else {
 			lineOccursCount = append(lineOccursCount, LineOccursCount{
-				CompLine: line[options.S.NumChars:],
-				ActualLine:  lines[i],
-				Count: 1,
+				CompLine:   line[options.S.NumChars:],
+				ActualLine: lines[i],
+				Count:      1,
 			})
 		}
 	}

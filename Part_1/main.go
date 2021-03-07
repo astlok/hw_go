@@ -41,7 +41,7 @@ func ReadFromStream(args []string) ([]string, error) {
 
 func WriteLines(w io.Writer, lines []string) error {
 	for i, line := range lines {
-		if i != len(lines) - 1 {
+		if i != len(lines)-1 {
 			line += "\n"
 		}
 
@@ -57,7 +57,7 @@ func WriteLines(w io.Writer, lines []string) error {
 func WriteToStream(args []string, toWrite []string) error {
 	var w io.Writer
 	switch len(args) {
-	case 0,1:
+	case 0, 1:
 		w = os.Stdout
 	case 2:
 		writeFile, errWrite := os.OpenFile(args[1], os.O_WRONLY, 0666)
@@ -83,7 +83,7 @@ func ArgHandle() (uniq.Options, error) {
 	options.F.NumFields = *flag.Int("f", 0, "вывести только те строки, которые не повторились во входных данных.")
 	options.F.Exists = options.F.NumFields > 0
 	options.S.NumChars = *flag.Int("s", 0, "вывести только те строки, которые не повторились во входных данных.")
-	options.S.Exists = options.S.NumChars  > 0
+	options.S.Exists = options.S.NumChars > 0
 	flag.Parse()
 
 	if (options.C && options.D) || (options.D && options.U) || (options.C && options.U) {

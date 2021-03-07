@@ -6,12 +6,12 @@ import (
 )
 
 var UniqTests = []struct {
-	name string
+	name    string
 	options Options
 	in      []string
 	out     []string
 }{
-	{ 	"Без опций",
+	{"Без опций",
 		Options{
 			C: false,
 			D: false,
@@ -45,7 +45,7 @@ var UniqTests = []struct {
 			"I love music of Kartik.",
 		},
 	},
-	{ 	"Флаг -с",
+	{"Флаг -с",
 		Options{
 			C: true,
 			D: false,
@@ -79,7 +79,7 @@ var UniqTests = []struct {
 			"2 I love music of Kartik.",
 		},
 	},
-	{ 	"Флаг -d",
+	{"Флаг -d",
 		Options{
 			C: false,
 			D: true,
@@ -111,7 +111,7 @@ var UniqTests = []struct {
 			"I love music of Kartik.",
 		},
 	},
-	{ 	"Флаг -u",
+	{"Флаг -u",
 		Options{
 			C: false,
 			D: false,
@@ -142,7 +142,7 @@ var UniqTests = []struct {
 			"Thanks.",
 		},
 	},
-	{ 	"Флаг -i",
+	{"Флаг -i",
 		Options{
 			C: false,
 			D: false,
@@ -176,7 +176,7 @@ var UniqTests = []struct {
 			"I love music of kartik.",
 		},
 	},
-	{ 	"Флаг -f num",
+	{"Флаг -f num",
 		Options{
 			C: false,
 			D: false,
@@ -207,18 +207,18 @@ var UniqTests = []struct {
 			"Thanks.",
 		},
 	},
-	{ 	"Флаг -s num",
+	{"Флаг -s num",
 		Options{
 			C: false,
 			D: false,
 			U: false,
 			I: false,
 			F: F{
-				Exists: false,
+				Exists:    false,
 				NumFields: 0,
 			},
 			S: S{
-				Exists: true,
+				Exists:   true,
 				NumChars: 1,
 			},
 		},
