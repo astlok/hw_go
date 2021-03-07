@@ -64,9 +64,8 @@ func WriteToStream(args []string, toWrite []string) error {
 
 		if errWrite != nil {
 			return errWrite
-		} else {
-			defer writeFile.Close()
 		}
+		defer writeFile.Close()
 		w = writeFile
 	}
 	err := WriteLines(w, toWrite)
